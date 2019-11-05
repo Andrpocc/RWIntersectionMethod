@@ -150,6 +150,6 @@ for n in range(21):
 
 time_end = time.time() - time_start
 print(Fore.RED, time_end)
-input()
+
 
 
