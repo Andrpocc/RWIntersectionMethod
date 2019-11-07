@@ -1,7 +1,7 @@
 from colorama import init, Fore, Style
 import time
 import os
-from math import sin, cos, radians, sqrt, acos, degrees
+from math import sin, cos, radians, sqrt, acos, degrees, asin
 from random import normalvariate
 from geo_tasks import *
 init()
@@ -54,7 +54,7 @@ def accuracy_degree(p_data: list, degree, minute, sec):
     mx = sqrt(sumx / 10000)
     my = sqrt(sumy / 10000)
     mt = sqrt(mx ** 2 + my ** 2)
-    mup = round(sumup / 10000, 0)
+    mup = int(round(sumup / 10000, 0))
     print(Fore.CYAN, mx, my, mt, mup, sep='\t')
 
 
@@ -105,15 +105,61 @@ def accuracy_line(p_data: list, line_data):
     mx = sqrt(sumx / 10000)
     my = sqrt(sumy / 10000)
     mt = sqrt(mx ** 2 + my ** 2)
-    mup = round(sumup / 10000, 0)
+    mup = int(round(sumup / 10000, 0))
     print(Fore.GREEN, mx, my, mt, mup, sep='\t')
 
 
+def accuracy_backlinedegree(p_data, p_degree, p_minute, p_sec, line_data):
+    a = [400, 200]
+    b = [400, 400]
+    dx_list = []
+    dy_list = []
+    for i in range(10000):
+        up = p_degree + p_minute / 60 + p_sec / 3600
+        up += normalvariate(0, 5) / 3600
+        ap = line_data
+        ap += normalvariate(0, 4) / 1000
+        bp = line_data
+        bp += normalvariate(0, 4) / 1000
+        g, m, c, ab = ogz(a[0], a[1], b[0], b[1])
+        uab = g + m / 60 + c / 3600
+        ub = degrees(asin(sin(radians(up)) * ap / ab))
+        ua = degrees(asin(sin(radians(up)) * bp / ab))
+        uap = (uab + 180) + ua - 180
+        ubp = uab - ub + 180
+        p1 = [0, 0]
+        p2 = [0, 0]
+        p1[0] = a[0] + ap * cos(radians(uap))
+        p1[1] = a[1] + ap * sin(radians(uap))
+        p2[0] = b[0] + bp * cos(radians(ubp))
+        p2[1] = b[1] + bp * sin(radians(ubp))
+        x = (p1[0] + p2[0]) / 2
+        y = (p1[1] + p2[1]) / 2
+        p_result = [x, y]
+        """Оценка точности"""
+        dx = p_data[0] - x
+        dy = p_data[1] - y
+        dx_list.append(dx ** 2)
+        dy_list.append(dy ** 2)
+    sumx = 0
+    for n in dx_list:
+        sumx += n
+    sumy = 0
+    for n in dy_list:
+        sumy += n
+    mx = sqrt(sumx / 10000)
+    my = sqrt(sumy / 10000)
+    mt = sqrt(mx ** 2 + my ** 2)
+    mup = round(up)
+    print(Fore.YELLOW, mx, my, mt, mup, sep='\t')
+
+
 with open('data_p.txt', 'r') as data:
-    data_p_y_list = data.readlines()
-data_py = []
-for data in data_p_y_list:
-    data_py.append(float(data.replace('\n', '')))
+    data_p_x_list = data.readlines()
+data_px = []
+for data in data_p_x_list:
+    data_px.append(float(data.replace('\n', '')))
+
 with open('data_degrees.txt', 'r') as data:
     data_degrees_list = data.readlines()
 data_degrees = []
@@ -129,27 +175,50 @@ with open('data_seconds.txt', 'r') as data:
 data_seconds = []
 for data in data_seconds_list:
     data_seconds.append(float(data.replace('\n', '')))
+
 with open('data_line.txt', 'r') as data:
     data_line_list = data.readlines()
 data_line = []
 for data in data_line_list:
     data_line.append(float(data.replace('\n', '')))
 
+with open('p_degrees.txt', 'r') as data:
+    data_degrees_list = data.readlines()
+p_degrees = []
+for data in data_degrees_list:
+    p_degrees.append(float(data.replace('\n', '')))
+with open('p_minutes.txt', 'r') as data:
+    data_minutes_list = data.readlines()
+p_minutes = []
+for data in data_minutes_list:
+    p_minutes.append(float(data.replace('\n', '')))
+with open('p_seconds.txt', 'r') as data:
+    data_seconds_list = data.readlines()
+p_seconds = []
+for data in data_seconds_list:
+    p_seconds.append(float(data.replace('\n', '')))
+
 
 time_start = time.time()
+print(Style.BRIGHT)
 
 print(Fore.RED, 'Угловая засечка')
 print(Fore.RED, 'mx\t\t', 'my\t\t', 'mt\t\t', 'P', sep='\t')
 for n in range(21):
-    accuracy_degree([data_py[n], 300], data_degrees[n], data_minutes[n], data_seconds[n])
+    accuracy_degree([data_px[n], 300], data_degrees[n], data_minutes[n], data_seconds[n])
 
 print(Fore.RED, 'Линейная засечка')
 print(Fore.RED, 'mx\t\t', 'my\t\t', 'mt\t\t', 'P', sep='\t')
 for n in range(21):
-    accuracy_line([data_py[n], 300], data_line[n])
+    accuracy_line([data_px[n], 300], data_line[n])
+
+print(Fore.RED, 'Обратная линейно-угловая ')
+print(Fore.RED, 'mx\t\t', 'my\t\t', 'mt\t\t', 'P', sep='\t')
+for n in range(21):
+    accuracy_backlinedegree([data_px[n], 300], p_degrees[n], p_minutes[n], p_seconds[n], data_line[n])
 
 time_end = time.time() - time_start
 print(Fore.RED, time_end)
-
+input()
 
 
