@@ -1,4 +1,10 @@
 from colorama import init, Fore, Style
+from prettytable import PrettyTable
+from scipy import stats
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 import time
 import os
 from math import sin, cos, radians, sqrt, acos, degrees, asin
@@ -14,7 +20,7 @@ def accuracy_degree(p_data: list, degree, minute, sec):
     dx_list = []
     dy_list = []
     up_list = []
-    for i in range(10000):
+    for i in range(1000):
         ug = degree + minute / 60 + sec / 3600
         fa = normalvariate(0, 5)
         fb = normalvariate(0, 5)
@@ -51,11 +57,11 @@ def accuracy_degree(p_data: list, degree, minute, sec):
     sumup = 0
     for n in up_list:
         sumup += n
-    mx = sqrt(sumx / 10000)
-    my = sqrt(sumy / 10000)
+    mx = sqrt(sumx / 1000)
+    my = sqrt(sumy / 1000)
     mt = sqrt(mx ** 2 + my ** 2)
-    mup = int(round(sumup / 10000, 0))
-    print(Fore.CYAN, mx, my, mt, mup, sep='\t')
+    mup = int(round(sumup / 1000, 0))
+    return round(mx, 5), round(my, 5), round(mt, 5), mup
 
 
 def accuracy_line(p_data: list, line_data):
@@ -64,7 +70,7 @@ def accuracy_line(p_data: list, line_data):
     dx_list = []
     dy_list = []
     up_list = []
-    for i in range(10000):
+    for i in range(1000):
         ap = line_data
         bp = line_data
         fap = normalvariate(0, 4)
@@ -102,11 +108,11 @@ def accuracy_line(p_data: list, line_data):
     sumup = 0
     for n in up_list:
         sumup += n
-    mx = sqrt(sumx / 10000)
-    my = sqrt(sumy / 10000)
+    mx = sqrt(sumx / 1000)
+    my = sqrt(sumy / 1000)
     mt = sqrt(mx ** 2 + my ** 2)
-    mup = int(round(sumup / 10000, 0))
-    print(Fore.GREEN, mx, my, mt, mup, sep='\t')
+    mup = int(round(sumup / 1000, 0))
+    return round(mx, 5), round(my, 5), round(mt, 5), mup
 
 
 def accuracy_backlinedegree(p_data, p_degree, p_minute, p_sec, line_data):
@@ -114,7 +120,7 @@ def accuracy_backlinedegree(p_data, p_degree, p_minute, p_sec, line_data):
     b = [400, 400]
     dx_list = []
     dy_list = []
-    for i in range(10000):
+    for i in range(1000):
         up = p_degree + p_minute / 60 + p_sec / 3600
         up += normalvariate(0, 5) / 3600
         ap = line_data
@@ -147,11 +153,11 @@ def accuracy_backlinedegree(p_data, p_degree, p_minute, p_sec, line_data):
     sumy = 0
     for n in dy_list:
         sumy += n
-    mx = sqrt(sumx / 10000)
-    my = sqrt(sumy / 10000)
+    mx = sqrt(sumx / 1000)
+    my = sqrt(sumy / 1000)
     mt = sqrt(mx ** 2 + my ** 2)
     mup = round(up)
-    print(Fore.YELLOW, mx, my, mt, mup, sep='\t')
+    return round(mx, 5), round(my, 5), round(mt, 5), mup
 
 
 with open('data_p.txt', 'r') as data:
@@ -202,23 +208,70 @@ for data in data_seconds_list:
 time_start = time.time()
 print(Style.BRIGHT)
 
-print(Fore.RED, 'Угловая засечка')
-print(Fore.RED, 'mx\t\t', 'my\t\t', 'mt\t\t', 'P', sep='\t')
+print(Fore.RED)
+tb = PrettyTable()
+tb.title = 'Прямая угловая засечка'
+tb.min_table_width = 100
+tb.field_names = ['mx', 'my', 'mt', 'p']
+accuracy_degree_data_mt = []
+accuracy_degree_data_p = []
 for n in range(21):
-    accuracy_degree([data_px[n], 300], data_degrees[n], data_minutes[n], data_seconds[n])
+    mx, my, mt, p = accuracy_degree([data_px[n], 300], data_degrees[n], data_minutes[n], data_seconds[n])
+    accuracy_degree_data_mt.append(mt)
+    accuracy_degree_data_p.append(p)
+    tb.add_row([mx, my, mt, p])
+print(tb)
 
-print(Fore.RED, 'Линейная засечка')
-print(Fore.RED, 'mx\t\t', 'my\t\t', 'mt\t\t', 'P', sep='\t')
+print(Fore.GREEN)
+tb = PrettyTable()
+tb.title = 'Прямая линейная засечка'
+tb.field_names = ['mx', 'my', 'mt', 'p']
+tb.min_table_width = 100
+accuracy_line_data_mt = []
+accuracy_line_data_p = []
 for n in range(21):
-    accuracy_line([data_px[n], 300], data_line[n])
+    mx, my, mt, p = accuracy_line([data_px[n], 300], data_line[n])
+    accuracy_line_data_mt.append(mt)
+    accuracy_line_data_p.append(p)
+    tb.add_row([mx, my, mt, p])
+print(tb)
 
-print(Fore.RED, 'Обратная линейно-угловая ')
-print(Fore.RED, 'mx\t\t', 'my\t\t', 'mt\t\t', 'P', sep='\t')
+print(Fore.BLUE)
+tb = PrettyTable()
+tb.title = 'Обратная линейно-угловая засечка'
+tb.field_names = ['mx', 'my', 'mt', 'p']
+tb.min_table_width = 100
+accuracy_backlinedegree_data_mt = []
+accuracy_backlinedegree_data_p = []
 for n in range(21):
-    accuracy_backlinedegree([data_px[n], 300], p_degrees[n], p_minutes[n], p_seconds[n], data_line[n])
+    mx, my, mt, p = accuracy_backlinedegree([data_px[n], 300], p_degrees[n], p_minutes[n], p_seconds[n], data_line[n])
+    accuracy_backlinedegree_data_mt.append(mt)
+    accuracy_backlinedegree_data_p.append(p)
+    tb.add_row([mx, my, mt, p])
+print(tb)
 
 time_end = time.time() - time_start
 print(Fore.RED, time_end)
 input()
+slope, intercept, r_value, p_value, std_err = stats.linregress(accuracy_degree_data_p, accuracy_degree_data_mt)
 
+sns.set(style='whitegrid')
+plt.figure('Регрессия')
+plt.subplots_adjust(hspace=0.35)
+plt.subplot(311)
+plt.ylim(0, 0.02)
+plt.title('Прямая угловая засечка')
+plt.scatter(accuracy_degree_data_p, accuracy_degree_data_mt, color='r')
+x_array = np.array(accuracy_degree_data_p)
+plt.plot(accuracy_degree_data_p, intercept + x_array * slope, color='k')
+plt.subplot(312)
+plt.ylim(0, 0.02)
+plt.title('Прямая линейная засечка')
+plt.scatter(accuracy_line_data_p, accuracy_line_data_mt, color='g')
+plt.subplot(313)
+plt.ylim(0, 0.02)
+plt.title('Обратная линейно-угловая засечка')
+plt.scatter(accuracy_backlinedegree_data_p, accuracy_backlinedegree_data_mt, color='b')
+plt.show()
+print(r_value)
 
