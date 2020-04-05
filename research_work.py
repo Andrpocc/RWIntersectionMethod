@@ -4,6 +4,7 @@ from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
 import time
 import os
@@ -12,18 +13,20 @@ from random import normalvariate
 from geo_tasks import *
 init()
 
+iterations = 10000
 
 
 def accuracy_degree(p_data: list, degree, minute, sec):
+    global iterations
     a = [400, 200]
     b = [400, 400]
     dx_list = []
     dy_list = []
     up_list = []
-    for i in range(1000):
+    for i in range(iterations):
         ug = degree + minute / 60 + sec / 3600
-        fa = normalvariate(0, 5)
-        fb = normalvariate(0, 5)
+        fa = normalvariate(0, 9)
+        fb = normalvariate(0, 9)
         ua = ug + fa / 3600
         ub = ug + fb / 3600
         g, m, c, ab = ogz(a[0], a[1], b[0], b[1])
@@ -57,24 +60,25 @@ def accuracy_degree(p_data: list, degree, minute, sec):
     sumup = 0
     for n in up_list:
         sumup += n
-    mx = sqrt(sumx / 1000)
-    my = sqrt(sumy / 1000)
-    mt = sqrt(mx ** 2 + my ** 2)
-    mup = int(round(sumup / 1000, 0))
-    return round(mx, 5), round(my, 5), round(mt, 5), mup
+    mx = round(sqrt(sumx / iterations), 3)
+    my = round(sqrt(sumy / iterations), 3)
+    mt = round(sqrt(mx ** 2 + my ** 2), 3)
+    mup = int(round(sumup / iterations, 0))
+    return int(mx * 1000), int(my * 1000), int(mt * 1000), mup
 
 
 def accuracy_line(p_data: list, line_data):
+    global iterations
     a = [400, 200]
     b = [400, 400]
     dx_list = []
     dy_list = []
     up_list = []
-    for i in range(1000):
+    for i in range(iterations):
         ap = line_data
         bp = line_data
-        fap = normalvariate(0, 4)
-        fbp = normalvariate(0, 4)
+        fap = normalvariate(0, 2 + ap / 1000 * 2)
+        fbp = normalvariate(0, 2 + bp / 1000 * 2)
         ap += fap / 1000
         bp += fbp / 1000
         g, m, c, ab = ogz(a[0], a[1], b[0], b[1])
@@ -108,11 +112,11 @@ def accuracy_line(p_data: list, line_data):
     sumup = 0
     for n in up_list:
         sumup += n
-    mx = sqrt(sumx / 1000)
-    my = sqrt(sumy / 1000)
-    mt = sqrt(mx ** 2 + my ** 2)
-    mup = int(round(sumup / 1000, 0))
-    return round(mx, 5), round(my, 5), round(mt, 5), mup
+    mx = round(sqrt(sumx / iterations), 3)
+    my = round(sqrt(sumy / iterations), 3)
+    mt = round(sqrt(mx ** 2 + my ** 2), 3)
+    mup = int(round(sumup / iterations, 0))
+    return int(mx * 1000), int(my * 1000), int(mt * 1000), mup
 
 
 def accuracy_backlinedegree(p_data, p_degree, p_minute, p_sec, line_data):
@@ -120,13 +124,13 @@ def accuracy_backlinedegree(p_data, p_degree, p_minute, p_sec, line_data):
     b = [400, 400]
     dx_list = []
     dy_list = []
-    for i in range(1000):
+    for i in range(iterations):
         up = p_degree + p_minute / 60 + p_sec / 3600
-        up += normalvariate(0, 5) / 3600
+        up += normalvariate(0, 9) / 3600
         ap = line_data
-        ap += normalvariate(0, 4) / 1000
+        ap += normalvariate(0, 2 + ap / 1000 * 2) / 1000
         bp = line_data
-        bp += normalvariate(0, 4) / 1000
+        bp += normalvariate(0, 2 + bp / 1000 * 2) / 1000
         g, m, c, ab = ogz(a[0], a[1], b[0], b[1])
         uab = g + m / 60 + c / 3600
         ub = degrees(asin(sin(radians(up)) * ap / ab))
@@ -153,11 +157,11 @@ def accuracy_backlinedegree(p_data, p_degree, p_minute, p_sec, line_data):
     sumy = 0
     for n in dy_list:
         sumy += n
-    mx = sqrt(sumx / 1000)
-    my = sqrt(sumy / 1000)
-    mt = sqrt(mx ** 2 + my ** 2)
+    mx = round(sqrt(sumx / iterations), 3)
+    my = round(sqrt(sumy / iterations), 3)
+    mt = round(sqrt(mx ** 2 + my ** 2), 3)
     mup = round(up)
-    return round(mx, 5), round(my, 5), round(mt, 5), mup
+    return int(mx * 1000), int(my * 1000), int(mt * 1000), mup
 
 
 with open('data_p.txt', 'r') as data:
@@ -212,66 +216,94 @@ print(Fore.RED)
 tb = PrettyTable()
 tb.title = 'Прямая угловая засечка'
 tb.min_table_width = 100
-tb.field_names = ['mx', 'my', 'mt', 'p']
+tb.field_names = ['mx, mm', 'my, mm', 'mt, mm', 'p, deg']
 accuracy_degree_data_mt = []
 accuracy_degree_data_p = []
-for n in range(21):
+frame_degree = pd.DataFrame(index=range(1, 41), columns=['mx', 'my', 'mt', 'p'])
+for n in range(40):
     mx, my, mt, p = accuracy_degree([data_px[n], 300], data_degrees[n], data_minutes[n], data_seconds[n])
     accuracy_degree_data_mt.append(mt)
     accuracy_degree_data_p.append(p)
     tb.add_row([mx, my, mt, p])
+    frame_degree.iloc[n] = [mx, my, mt, p]
+frame_degree.to_csv('frame_degree.txt', sep='\t')
 print(tb)
 
 print(Fore.GREEN)
 tb = PrettyTable()
 tb.title = 'Прямая линейная засечка'
-tb.field_names = ['mx', 'my', 'mt', 'p']
+tb.field_names = ['mx, mm', 'my, mm', 'mt, mm', 'p, deg']
 tb.min_table_width = 100
 accuracy_line_data_mt = []
 accuracy_line_data_p = []
-for n in range(21):
+frame_line = pd.DataFrame(index=range(1, 41), columns=['mx', 'my', 'mt', 'p'])
+for n in range(40):
     mx, my, mt, p = accuracy_line([data_px[n], 300], data_line[n])
     accuracy_line_data_mt.append(mt)
     accuracy_line_data_p.append(p)
     tb.add_row([mx, my, mt, p])
+    frame_line.iloc[n] = [mx, my, mt, p]
+frame_line.to_csv('frame_line.txt', sep='\t')
 print(tb)
 
 print(Fore.BLUE)
 tb = PrettyTable()
 tb.title = 'Обратная линейно-угловая засечка'
-tb.field_names = ['mx', 'my', 'mt', 'p']
+tb.field_names = ['mx, mm', 'my, mm', 'mt, mm', 'p, deg']
 tb.min_table_width = 100
 accuracy_backlinedegree_data_mt = []
 accuracy_backlinedegree_data_p = []
-for n in range(21):
+frame_linedegree = pd.DataFrame(index=range(1, 41), columns=['mx', 'my', 'mt', 'p'])
+for n in range(40):
     mx, my, mt, p = accuracy_backlinedegree([data_px[n], 300], p_degrees[n], p_minutes[n], p_seconds[n], data_line[n])
     accuracy_backlinedegree_data_mt.append(mt)
     accuracy_backlinedegree_data_p.append(p)
     tb.add_row([mx, my, mt, p])
+    frame_linedegree.iloc[n] = [mx, my, mt, p]
+frame_linedegree.to_csv('frame_linedegree.txt', sep='\t')
 print(tb)
 
 time_end = time.time() - time_start
 print(Fore.RED, time_end)
 input()
-slope, intercept, r_value, p_value, std_err = stats.linregress(accuracy_degree_data_p, accuracy_degree_data_mt)
 
 sns.set(style='whitegrid')
+
 plt.figure('Регрессия')
-plt.subplots_adjust(hspace=0.35)
-plt.subplot(311)
-plt.ylim(0, 0.02)
+#plt.subplots_adjust(hspace=0.35)
+#plt.subplot(311)
+plt.ylim(0, 20)
 plt.title('Прямая угловая засечка')
 plt.scatter(accuracy_degree_data_p, accuracy_degree_data_mt, color='r')
 x_array = np.array(accuracy_degree_data_p)
-plt.plot(accuracy_degree_data_p, intercept + x_array * slope, color='k')
-plt.subplot(312)
-plt.ylim(0, 0.02)
-plt.title('Прямая линейная засечка')
-plt.scatter(accuracy_line_data_p, accuracy_line_data_mt, color='g')
-plt.subplot(313)
-plt.ylim(0, 0.02)
-plt.title('Обратная линейно-угловая засечка')
-plt.scatter(accuracy_backlinedegree_data_p, accuracy_backlinedegree_data_mt, color='b')
+slope, intercept, r_value, p_value, std_err = stats.linregress(accuracy_degree_data_p, accuracy_degree_data_mt)
+plt.plot(accuracy_degree_data_p, intercept + x_array * slope, color='c')
 plt.show()
-print(r_value)
+input()
+
+
+plt.title('Прямая линейная засечка')
+plt.scatter(accuracy_line_data_p, accuracy_line_data_mt, color='b')
+x_array = np.array(accuracy_line_data_p)
+slope, intercept, r_value, p_value, std_err = stats.linregress(accuracy_line_data_p, accuracy_line_data_mt)
+plt.plot(accuracy_line_data_p, intercept + x_array * slope, color='c')
+plt.show()
+input()
+
+plt.title('Обратная линейно-угловая засечка')
+plt.scatter(accuracy_backlinedegree_data_p, accuracy_backlinedegree_data_mt, color='g')
+x_array = np.array(accuracy_backlinedegree_data_p)
+slope, intercept, r_value, p_value, std_err = stats.linregress(accuracy_backlinedegree_data_p, accuracy_backlinedegree_data_mt)
+plt.plot(accuracy_backlinedegree_data_p, intercept + x_array * slope, color='c')
+plt.show()
+input()
+#plt.subplot(312)
+#plt.ylim(0, 20)
+#plt.title('Прямая линейная засечка')
+#plt.scatter(accuracy_line_data_p, accuracy_line_data_mt, color='g')
+#plt.subplot(313)
+#plt.ylim(0, 20)
+#plt.title('Обратная линейно-угловая засечка')
+#plt.scatter(accuracy_backlinedegree_data_p, accuracy_backlinedegree_data_mt, color='b')
+
 
