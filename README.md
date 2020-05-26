@@ -16,6 +16,10 @@
     
 Установить зависимости
 
+<<<<<<< HEAD
     pip install -r requirements.txt
+=======
+    pip install requirements.txt
+>>>>>>> 3741128393d054e0d526232440d1b1b9ed00b4b2
 
 #### ГУЗ, 2020
